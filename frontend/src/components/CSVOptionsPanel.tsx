@@ -1,118 +1,198 @@
 import React from 'react';
 
-interface CSVOptionsPanelProps {
-  csvColumns: string[];
-  csvOptions: any;
-  setCsvOptions: (opts: any) => void;
+export interface CsvFeatures {
+  Sort: { Column: string; Direction: 'asc' | 'desc' };
+  DedupeCols: string[];
+  Filter: { Column: string; Contains: string };
+  RemoveEmpty: string;
+  TopNPerGrp: { Column: string; Limit: number };
+  RenameColumn: string;
+  NewColumnName: string;
+  KeepOnlyColumn: string[];
 }
 
-const CSVOptionsPanel: React.FC<CSVOptionsPanelProps> = ({ csvColumns, csvOptions, setCsvOptions }) => {
-  const updateOption = (key: string, value: any) => {
-    setCsvOptions((prev: any) => ({ ...prev, [key]: value }));
-  };
+interface CSVOptionsPanelProps {
+  csvColumns: string[];
+  csvFeatures: CsvFeatures;
+  setCsvFeatures: React.Dispatch<React.SetStateAction<CsvFeatures>>;
+}
 
+const CSVOptionsPanel: React.FC<CSVOptionsPanelProps> = ({
+  csvColumns,
+  csvFeatures,
+  setCsvFeatures,
+}) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-4">
-      <h2 className="text-xl font-semibold mb-4">CSV Options</h2>
+    <div className="p-4 bg-white border rounded-lg shadow-sm space-y-4">
+      <h2 className="text-lg font-semibold">CSV Options</h2>
 
-      {/* Remove duplicates */}
-      <label className="block mb-3">
-        Remove duplicates by column:
-        <select value={csvOptions.removeDupesByColumn ?? ""} onChange={(e) => updateOption("removeDupesByColumn", Number(e.target.value))}>
+      {/* Sort */}
+      <div>
+        <label>Sort Column:</label>
+        <select
+          value={csvFeatures.Sort.Column}
+          onChange={(e) =>
+            setCsvFeatures((prev) => ({
+              ...prev,
+              Sort: { ...prev.Sort, Column: e.target.value },
+            }))
+          }
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        >
           <option value="">-- Select column --</option>
           {csvColumns.map((col, idx) => (
-            <option key={idx} value={idx}>{col}</option>
+            <option key={idx} value={col}>
+              {col}
+            </option>
           ))}
         </select>
-      </label>
 
-      {/* Sort by column */}
-      <label className="block mb-3">
-        Sort by column:
-        <select value={csvOptions.sortByColumnIndex ?? ""} onChange={(e) => updateOption("sortByColumnIndex", Number(e.target.value))}>
-          <option value="">-- Select column --</option>
-          {csvColumns.map((col, idx) => (
-            <option key={idx} value={idx}>{col}</option>
-          ))}
-        </select>
-        <label className="ml-2">
-          Descending:
+        <label className="inline-flex items-center mt-2">
           <input
             type="checkbox"
-            checked={csvOptions.sortDescending || false}
-            onChange={(e) => updateOption("sortDescending", e.target.checked)}
+            checked={csvFeatures.Sort.Direction === 'desc'}
+            onChange={(e) =>
+              setCsvFeatures((prev) => ({
+                ...prev,
+                Sort: { ...prev.Sort, Direction: e.target.checked ? 'desc' : 'asc' },
+              }))
+            }
+            className="mr-2"
           />
+          Descending
         </label>
-      </label>
+      </div>
 
-      {/* Remove rows where blank */}
-      <label className="block mb-3">
-        Remove rows where column is blank:
-        <select value={csvOptions.removeRowsIfColumnBlank ?? ""} onChange={(e) => updateOption("removeRowsIfColumnBlank", Number(e.target.value))}>
-          <option value="">-- Select column --</option>
+      {/* Dedupe Columns */}
+      <div>
+        <label>Remove Duplicates By Column(s):</label>
+        <select
+          multiple
+          value={csvFeatures.DedupeCols}
+          onChange={(e) => {
+            const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
+            setCsvFeatures((prev) => ({ ...prev, DedupeCols: selected }));
+          }}
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        >
           {csvColumns.map((col, idx) => (
-            <option key={idx} value={idx}>{col}</option>
+            <option key={idx} value={col}>
+              {col}
+            </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      {/* Filter contains */}
-      <label className="block mb-3">
-        Filter rows where column contains:
-        <select value={csvOptions.filterColumnIndex ?? ""} onChange={(e) => updateOption("filterColumnIndex", Number(e.target.value))}>
+      {/* Filter */}
+      <div>
+        <label>Filter Column:</label>
+        <select
+          value={csvFeatures.Filter.Column}
+          onChange={(e) =>
+            setCsvFeatures((prev) => ({
+              ...prev,
+              Filter: { ...prev.Filter, Column: e.target.value },
+            }))
+          }
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        >
           <option value="">-- Select column --</option>
           {csvColumns.map((col, idx) => (
-            <option key={idx} value={idx}>{col}</option>
+            <option key={idx} value={col}>
+              {col}
+            </option>
           ))}
         </select>
+
         <input
           type="text"
-          className="ml-2 border p-1"
-          placeholder="Value..."
-          value={csvOptions.filterContains || ""}
-          onChange={(e) => updateOption("filterContains", e.target.value)}
+          placeholder="Contains..."
+          value={csvFeatures.Filter.Contains}
+          onChange={(e) =>
+            setCsvFeatures((prev) => ({
+              ...prev,
+              Filter: { ...prev.Filter, Contains: e.target.value },
+            }))
+          }
+          className="mt-1 block w-full border-gray-300 rounded-md"
         />
-      </label>
+      </div>
 
-      {/* Rename column */}
-      <label className="block mb-3">
-        Rename column:
-        <select value={csvOptions.renameColumnIndex ?? ""} onChange={(e) => updateOption("renameColumnIndex", Number(e.target.value))}>
+      {/* Remove Empty */}
+      <div>
+        <label>Remove Rows If Column Blank:</label>
+        <select
+          value={csvFeatures.RemoveEmpty}
+          onChange={(e) => setCsvFeatures((prev) => ({ ...prev, RemoveEmpty: e.target.value }))}
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        >
           <option value="">-- Select column --</option>
           {csvColumns.map((col, idx) => (
-            <option key={idx} value={idx}>{col}</option>
+            <option key={idx} value={col}>
+              {col}
+            </option>
           ))}
         </select>
+      </div>
+
+      {/* Rename Column */}
+      <div>
+        <label>Rename Column:</label>
+        <select
+          value={csvFeatures.RenameColumn}
+          onChange={(e) => setCsvFeatures((prev) => ({ ...prev, RenameColumn: e.target.value }))}
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        >
+          <option value="">-- Select column --</option>
+          {csvColumns.map((col, idx) => (
+            <option key={idx} value={col}>
+              {col}
+            </option>
+          ))}
+        </select>
+
         <input
           type="text"
-          className="ml-2 border p-1"
           placeholder="New name..."
-          value={csvOptions.newColumnName || ""}
-          onChange={(e) => updateOption("newColumnName", e.target.value)}
+          value={csvFeatures.NewColumnName}
+          onChange={(e) =>
+            setCsvFeatures((prev) => ({ ...prev, NewColumnName: e.target.value }))
+          }
+          className="mt-1 block w-full border-gray-300 rounded-md"
         />
-      </label>
+      </div>
 
-      {/* Keep only columns */}
-      <label className="block mb-3">
-        Keep only columns:
-        {csvColumns.map((col, idx) => (
-          <label key={idx} className="ml-2">
-            <input
-              type="checkbox"
-              checked={csvOptions.keepOnlyColumns?.includes(idx) || false}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setCsvOptions((prev: any) => {
-                  const current = new Set(prev.keepOnlyColumns || []);
-                  checked ? current.add(idx) : current.delete(idx);
-                  return { ...prev, keepOnlyColumns: Array.from(current) };
-                });
-              }}
-            />
-            {col}
-          </label>
-        ))}
-      </label>
+      {/* Top N per Group */}
+      <div>
+        <label>Top N Per Group (Column & Limit):</label>
+        <select
+          value={csvFeatures.TopNPerGrp.Column}
+          onChange={(e) =>
+            setCsvFeatures((prev) => ({ ...prev, TopNPerGrp: { ...prev.TopNPerGrp, Column: e.target.value } }))
+          }
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        >
+          <option value="">-- Select column --</option>
+          {csvColumns.map((col, idx) => (
+            <option key={idx} value={col}>
+              {col}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min={0}
+          placeholder="Limit"
+          value={csvFeatures.TopNPerGrp.Limit}
+          onChange={(e) =>
+            setCsvFeatures((prev) => ({
+              ...prev,
+              TopNPerGrp: { ...prev.TopNPerGrp, Limit: parseInt(e.target.value) || 0 },
+            }))
+          }
+          className="mt-1 block w-full border-gray-300 rounded-md"
+        />
+      </div>
     </div>
   );
 };
